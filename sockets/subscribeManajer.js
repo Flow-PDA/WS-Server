@@ -1,12 +1,10 @@
-const stockList = new Map();
 const { remove, subscribe, subscriberEmitter } = require("./subscriber");
 const { publish, publisherEmitter } = require("./publisher");
 
 console.log("init manager");
+const stockList = new Map();
 
-/**
- * Receive list of tasks
- */
+// Receive list of tasks
 publisherEmitter.on("REGISTER_SUB", (msg) => {
   console.log(`[PUB]Event : REGISTER_SUB : ${msg.length}`);
   msg.forEach((elem) => {
@@ -14,6 +12,7 @@ publisherEmitter.on("REGISTER_SUB", (msg) => {
   });
 });
 
+// Receive list of task to remove
 publisherEmitter.on("RELEASE_SUB", (msg) => {
   console.log(`[PUB]Event : RELEASE_SUB : ${msg.length}`);
   msg.forEach((elem) => {
@@ -21,18 +20,25 @@ publisherEmitter.on("RELEASE_SUB", (msg) => {
   });
 });
 
+// TODO: Handle message from KIS WS
 subscriberEmitter.on("MESSAGE", (data) => {
   // const taskId = `${type}-${code}`;
   console.log(`[SUB]Event : MESSAGE : ${data}`);
   // updateData(taskId, data);
 });
 
+// Handle received data from KIS WS
 subscriberEmitter.on("UPDATED", (type, code, payload) => {
   const taskId = `${type}-${code}`;
   console.log(`[SUB]Event : UPDATED : ${taskId}`);
   updateData(taskId, payload);
 });
 
+/**
+ * handle new subscription event from client
+ * @param {*} type
+ * @param {*} stockCode
+ */
 function addStock(type, stockCode) {
   const taskId = `${type}-${stockCode}`;
   const elem = stockList.get(taskId);
@@ -50,6 +56,11 @@ function addStock(type, stockCode) {
   }
 }
 
+/**
+ * hanlde unsubscription event from client
+ * @param {*} type
+ * @param {*} stockCode
+ */
 function decreaseStock(type, stockCode) {
   const taskId = `${type}-${stockCode}`;
   const elem = stockList.get(taskId);
@@ -65,6 +76,11 @@ function decreaseStock(type, stockCode) {
   }
 }
 
+/**
+ * update data
+ * @param {*} taskId
+ * @param {*} data
+ */
 function updateData(taskId, data) {
   // console.log(taskId);
   // console.log(data);

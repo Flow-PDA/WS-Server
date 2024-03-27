@@ -18,6 +18,9 @@ console.log("init sub");
 class SubscriberEmitter extends EventEmitter {}
 const subscriberEmitter = new SubscriberEmitter();
 
+/**
+ * init WS
+ */
 module.exports = () => {
   ws = new Websocket(wsUrl);
   ws.on("open", () => {
@@ -40,21 +43,25 @@ module.exports = () => {
 
     // subscriberEmitter.emit("MESSAGE", "ping");
     if (dataArr[1] == "H0STCNT0") {
+      // 체결가
       const res = priceArrConverter(dataArr[2], dataArr[3]);
 
       res.forEach((elem) => {
         subscriberEmitter.emit("UPDATED", 1, elem[0], elem);
       });
     } else if (dataArr[1] == "H0STASP0") {
+      // 호가
       const res = buySellConverter(2, dataArr[3]);
       // console.log(`[SUB] calls : ${recvdata}`);
 
       subscriberEmitter.emit("UPDATED", 2, res.code, res);
       // console.log(res);
     } else {
+      // others
       const obj = JSON.parse(recvdata);
 
       if (obj.header?.tr_id === "PINGPONG") {
+        // PING
         console.log(`[SUB] received pingpong at ${obj.header.datetime}`);
         ws.pong(recvdata);
         console.log(`[SUB] send heartbeat signal`);
@@ -65,6 +72,11 @@ module.exports = () => {
   });
 };
 
+/**
+ * send subscription message to KIS WS
+ * @param {*} type 1(체결가) 2(호가)
+ * @param {*} code target stock code
+ */
 module.exports.subscribe = (type, code) => {
   console.log(`[SUB] start subscribing ${code}`);
   const temp = `{"header":{"approval_key": "${approvalKey}","custtype":"P","tr_type":"1","content-type":"utf-8"},"body":{"input":{"tr_id":"${TYPE_TO_TR_ID[type]}","tr_key":"${code}"}}}`;
@@ -72,6 +84,11 @@ module.exports.subscribe = (type, code) => {
   ws.send(temp);
 };
 
+/**
+ * send unsubscription message to KIS WS
+ * @param {*} type 1(체결가) 2(호가)
+ * @param {*} code target stock code
+ */
 module.exports.remove = (type, code) => {
   console.log(`[SUB] stop subscribing ${code}`);
   const temp = `{"header":{"approval_key": "${approvalKey}","custtype":"P","tr_type":"2","content-type":"utf-8"},"body":{"input":{"tr_id":"${TYPE_TO_TR_ID[type]}","tr_key":"${code}"}}}`;
@@ -108,14 +125,15 @@ function priceArrConverter(cnt, msg) {
 }
 
 /**
- *
+ * Buy-Sell string to obj
  * @param {Number} type
- * @param {String[]} msg array of received message from KIS WS divided by '|'
+ * @param {String} msg array of received message from KIS WS divided by '|'
+ * @returns {Object} { code: stock_code, sellList: [10][2], buyList: [10][2] }
  */
 function buySellConverter(msg) {
   // console.log(`[SUB] RECEIVED DATA : ${msg}`);
 
-  console.log(msg);
+  // console.log(msg);
   const dataArr = msg.split("^");
 
   const stockCode = dataArr[0];
