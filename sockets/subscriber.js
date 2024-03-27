@@ -1,7 +1,7 @@
 const Websocket = require("ws");
 const EventEmitter = require("events");
 // const { updateData } = require("./subscribeManajer");
-const { filterUnicode } = require("../utils/kisEncoderjs");
+const { filterUnicode } = require("../utils/kisEncoder.js");
 const {
   priceArrConverter,
   buySellConverter,
