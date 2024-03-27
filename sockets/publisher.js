@@ -27,27 +27,35 @@ module.exports = (server) => {
     // add event listeners
     // register
     socket.on("REGISTER_SUB", (msg) => {
-      console.log(msg);
-      // const roomId = "005930";
-      console.log(`[${socket.id}]JOINED ROOM : ${roomId}`);
-      socket.join(roomId);
-      console.log(`[${socket.id}] room list : ${socket.rooms}`);
+      const taskList = splitMessage(msg);
+
+      taskList.forEach((elem) => {
+        const roomId = `${elem.type}-${elem.code}`;
+        socket.join(roomId);
+        console.log(`[${socket.id}]JOINED ROOM : ${roomId}`);
+      });
+      console.log(`[${socket.id}] room list : ${[...socket.rooms].join(", ")}`);
 
       // emit event to manager
-      publisherEmitter.emit("REGISTER_SUB", msg);
+      publisherEmitter.emit("REGISTER_SUB", taskList);
 
       // registered
-      socketIo.emit("msg", "ok");
+      socketIo.emit("msg", "Connected");
     });
 
     // release
     socket.on("RELEASE_SUB", (msg) => {
-      console.log(msg);
-      // decreaseStock(msg);
-      const roomId = "005930";
-      console.log(`[${socket.id}]LEAVE ROOM : ${roomId}`);
-      socket.leave(roomId);
-      console.log(`[${socket.id}] room list : ${socket.rooms}`);
+      // console.log(msg);
+      const taskList = splitMessage(msg);
+
+      taskList.forEach((elem) => {
+        const roomId = `${elem.type}-${elem.code}`;
+        console.log(`[${socket.id}]LEAVE ROOM : ${roomId}`);
+        socket.leave(roomId);
+      });
+      console.log(`[${socket.id}] room list : ${[...socket.rooms].join(", ")}`);
+
+      publisherEmitter.emit("RELEASE_SUB", taskList);
     });
 
     socket.on("disconnecting", () => {
@@ -58,8 +66,16 @@ module.exports = (server) => {
         socket.leave(roomList[i]);
       }
 
-      console.log(`[${socket.id}] rooms left : ${socket.rooms}`);
-      publisherEmitter.emit("RELEASE_SUB", socket.romms);
+      console.log(
+        `[${socket.id}] rooms left : ${[...socket.rooms].join(", ")}`
+      );
+
+      const taskList = [];
+      roomList.forEach((elem) => {
+        const data = elem.split("-");
+        taskList.push({ type: data[0], code: data[1] });
+      });
+      publisherEmitter.emit("RELEASE_SUB", taskList);
     });
   });
 };
@@ -69,9 +85,24 @@ module.exports = (server) => {
  * @param {*} stockCode
  * @param {*} data
  */
-module.exports.publish = (stockCode, data) => {
-  console.log(`Publish to ${stockCode} : ${data.price}`);
-  socketIo.to(stockCode).emit("update", "hi there!");
+module.exports.publish = (roomId, data) => {
+  console.log(`[PUB] Publish to ${roomId} : ${data}`);
+  socketIo.to(roomId).emit("update", data);
 };
 
 module.exports.publisherEmitter = publisherEmitter;
+
+/**
+ * Split message sent from client
+ * @param {String} msg
+ * @returns {Array} list of { type, data }
+ */
+function splitMessage(msg) {
+  const dataArr = msg.split("^");
+  const ret = dataArr.map((elem) => {
+    const data = elem.split("|");
+    return { type: data[0], code: data[1] };
+  });
+
+  return ret;
+}

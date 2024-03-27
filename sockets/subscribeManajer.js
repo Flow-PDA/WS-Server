@@ -4,44 +4,69 @@ const { publish, publisherEmitter } = require("./publisher");
 
 console.log("init manager");
 
+/**
+ * Receive list of tasks
+ */
 publisherEmitter.on("REGISTER_SUB", (msg) => {
-  console.log(`[PUB]Event : REGISTER_SUB : ${msg}`);
-  addStock("005930", msg);
+  console.log(`[PUB]Event : REGISTER_SUB : ${msg.length}`);
+  msg.forEach((elem) => {
+    addStock(elem.type, elem.code);
+  });
 });
 
 publisherEmitter.on("RELEASE_SUB", (msg) => {
-  console.log(`[PUB]Event : RELEASE_SUB : ${msg}`);
-  decreaseStock("005930");
+  console.log(`[PUB]Event : RELEASE_SUB : ${msg.length}`);
+  msg.forEach((elem) => {
+    decreaseStock(elem.type, elem.code);
+  });
 });
 
-subscriberEmitter.on("MESSAGE", (msg) => {
-  console.log(`[SUB]Event : MESSAGE : ${msg}`);
-  updateData("005930", msg);
+subscriberEmitter.on("MESSAGE", (data) => {
+  // const taskId = `${type}-${code}`;
+  console.log(`[SUB]Event : MESSAGE : ${data}`);
+  // updateData(taskId, data);
 });
 
-function addStock(stockCode, msg) {
-  const elem = stockList.get(stockCode);
-  console.log(elem);
+subscriberEmitter.on("UPDATED", (type, code, payload) => {
+  const taskId = `${type}-${code}`;
+  console.log(`[SUB]Event : UPDATED : ${taskId}`);
+  updateData(taskId, payload);
+});
+
+function addStock(type, stockCode) {
+  const taskId = `${type}-${stockCode}`;
+  const elem = stockList.get(taskId);
+  console.log(
+    `[MAN] sub event from client : ${type}-${stockCode} : ${elem} exists`
+  );
+  // console.log(elem);
   if (!elem || elem.cnt == 0) {
-    stockList.set(stockCode, { cnt: 1, data: {} });
-    subscribe();
+    console.log(`[MAN] ${taskId} not exists, CREATE NEW`);
+    stockList.set(taskId, { cnt: 1, data: {} });
+    subscribe(type, stockCode);
   } else {
-    stockList.set(stockCode, { ...elem, cnt: elem.cnt + 1 });
+    console.log(`[MAN] ${taskId} exists, ${elem.cnt}`);
+    stockList.set(taskId, { ...elem, cnt: elem.cnt + 1 });
   }
 }
 
-function decreaseStock(stockCode) {
-  const elem = stockList.get(stockCode);
-  console.log(elem);
+function decreaseStock(type, stockCode) {
+  const taskId = `${type}-${stockCode}`;
+  const elem = stockList.get(taskId);
+  console.log(`[MAN] release event from client : decrease ${taskId}`);
+  // console.log(elem);
   if (!elem || elem.cnt == 1) {
-    stockList.delete(stockCode);
-    remove();
+    console.log(`[MAN] ${taskId} not exist or to be removed`);
+    stockList.delete(taskId);
+    remove(type, stockCode);
   } else {
-    stockList.set(stockCode, { ...elem, cnt: elem.cnt - 1 });
+    console.log(`[MAN] ${taskId} exists with ${elem.cnt} still subscribing`);
+    stockList.set(taskId, { ...elem, cnt: elem.cnt - 1 });
   }
 }
 
-function updateData(code, data) {
-  console.log(data);
-  publish("005930", data);
+function updateData(taskId, data) {
+  // console.log(taskId);
+  // console.log(data);
+  publish(taskId, data);
 }
