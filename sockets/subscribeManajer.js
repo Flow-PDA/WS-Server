@@ -1,5 +1,6 @@
 const { remove, subscribe, subscriberEmitter } = require("./subscriber");
 const { publish, publisherEmitter } = require("./publisher");
+const { getPrice } = require("../apis/kisApi");
 
 console.log("init manager");
 const stockList = new Map();
@@ -31,6 +32,11 @@ subscriberEmitter.on("MESSAGE", (data) => {
 subscriberEmitter.on("UPDATED", (type, code, payload) => {
   const taskId = `${type}-${code}`;
   console.log(`[SUB]Event : UPDATED : ${taskId}`);
+
+  const elem = stockList.get(taskId);
+  elem.data = payload;
+
+  Map.set(taskId, elem);
   updateData(taskId, payload);
 });
 
@@ -48,7 +54,16 @@ function addStock(type, stockCode) {
   // console.log(elem);
   if (!elem || elem.cnt == 0) {
     console.log(`[MAN] ${taskId} not exists, CREATE NEW`);
-    stockList.set(taskId, { cnt: 1, data: {} });
+
+    let initialData = [];
+    if (type == 1) {
+      getPrice(stockCode).then((data) => {
+        // console.log(data);
+        initialData = data;
+        updateData(taskId, data);
+      });
+    }
+    stockList.set(taskId, { cnt: 1, data: initialData });
     subscribe(type, stockCode);
   } else {
     console.log(`[MAN] ${taskId} exists, ${elem.cnt}`);
