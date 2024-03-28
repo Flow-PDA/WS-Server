@@ -8,7 +8,6 @@ console.log("init manager");
 const APPROVAL_KEYS = process.env.KIS_WS_APPROVAL_KEYS;
 const approvalKeys = APPROVAL_KEYS?.split("|");
 const availableWsCnt = approvalKeys.length;
-let wsConnection = 0;
 const stockList = new Map();
 const wsList = new Array(availableWsCnt);
 
@@ -126,7 +125,10 @@ function updateData(taskId, data) {
   // console.log(data);
   publish(taskId, data);
 }
-
+/**
+ * Create websocket connection by index number
+ * @param {*} idx ws index
+ */
 function createWS(idx) {
   const subscriber = new SubscriberClass(
     approvalKeys[idx],
@@ -136,10 +138,16 @@ function createWS(idx) {
   wsList[idx] = { cnt: 0, instance: subscriber };
 }
 
+/**
+ * Create subscription
+ * @param {*} type tr_type
+ * @param {*} stockCode stock code
+ * @returns
+ */
 function subscribe(type, stockCode) {
   const wsIdx = findAvailableWsIdx();
   if (wsIdx === -1) {
-    // do sth
+    // TODO : do sth
     return;
   }
 
@@ -148,12 +156,22 @@ function subscribe(type, stockCode) {
   return wsIdx;
 }
 
+/**
+ * Remove subscription
+ * @param {*} type tr_type
+ * @param {*} stockCode stock code
+ * @param {*} wsIdx wesocket index
+ */
 function remove(type, stockCode, wsIdx) {
   wsList[wsIdx].instance.remove(type, stockCode);
   wsList[wsIdx].cnt--;
   // disconnect if 0
 }
 
+/**
+ * Find available Websocket index
+ * @returns index number, -1 if no WS available
+ */
 function findAvailableWsIdx() {
   for (let i = 0; i < availableWsCnt; i++) {
     if (wsList[i].cnt < 40) return i;
