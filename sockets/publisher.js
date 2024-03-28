@@ -89,7 +89,7 @@ module.exports = (server) => {
  * @param {*} data
  */
 module.exports.publish = (roomId, data) => {
-  console.log(`[PUB] Publish to ${roomId} : ${data}`);
+  // console.log(`[PUB] Publish to ${roomId} : ${data}`);
   socketIo.to(roomId).emit("update", data);
 };
 
