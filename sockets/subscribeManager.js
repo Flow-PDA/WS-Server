@@ -1,9 +1,18 @@
-const { remove, subscribe, subscriberEmitter } = require("./subscriber");
+// const { remove, subscribe } = require("./subscriber");
 const { publish, publisherEmitter } = require("./publisher");
+const EventEmitter = require("events");
+const SubscriberClass = require("./SubscriberClass");
 const { getPrice } = require("../apis/kisApi");
 
 console.log("init manager");
+const APPROVAL_KEYS = process.env.KIS_WS_APPROVAL_KEYS;
+const approvalKeys = APPROVAL_KEYS?.split("|");
+const availableWsCnt = approvalKeys.length;
 const stockList = new Map();
+const wsList = new Array(availableWsCnt);
+
+class SubscriberEmitter extends EventEmitter {}
+const subscriberEmitter = new SubscriberEmitter();
 
 // Receive list of tasks
 publisherEmitter.on("REGISTER_SUB", (msg) => {
@@ -31,7 +40,7 @@ subscriberEmitter.on("MESSAGE", (data) => {
 // Handle received data from KIS WS
 subscriberEmitter.on("UPDATED", (type, code, payload) => {
   const taskId = `${type}-${code}`;
-  console.log(`[SUB]Event : UPDATED : ${taskId}`);
+  // console.log(`[SUB]Event : UPDATED : ${taskId}`);
 
   const elem = stockList.get(taskId);
   if (elem) {
@@ -41,6 +50,10 @@ subscriberEmitter.on("UPDATED", (type, code, payload) => {
     updateData(taskId, payload);
   }
 });
+
+createWS(0);
+
+createWS(1);
 
 /**
  * handle new subscription event from client
@@ -65,13 +78,13 @@ function addStock(type, stockCode) {
         updateData(taskId, data);
       });
     }
-    stockList.set(taskId, { cnt: 1, data: initialData });
-    subscribe(type, stockCode);
+    const wsIdx = subscribe(type, stockCode);
+    stockList.set(taskId, { cnt: 1, data: initialData, wsIdx: wsIdx });
     console.log(
-      `[MAN] ${taskId} data created, ${stockList.size} subscription elem exists`
+      `[MAN] ${taskId} data created at ws ${wsIdx}, ${stockList.size} subscription elem exists`
     );
   } else {
-    console.log(`[MAN] ${taskId} exists, ${elem.cnt}`);
+    console.log(`[MAN] ${taskId} exists, ${elem.cnt}, send ${elem.data}`);
     stockList.set(taskId, { ...elem, cnt: elem.cnt + 1 });
     updateData(taskId, elem.data);
   }
@@ -90,9 +103,14 @@ function decreaseStock(type, stockCode) {
   if (!elem || elem.cnt == 1) {
     console.log(`[MAN] ${taskId} not exist or to be removed`);
     stockList.delete(taskId);
-    remove(type, stockCode);
+
+    if (elem) {
+      remove(type, stockCode, elem.wsIdx);
+    }
   } else {
-    console.log(`[MAN] ${taskId} exists with ${elem.cnt} still subscribing`);
+    console.log(
+      `[MAN] ${taskId} exists with ${elem.cnt - 1} still subscribing`
+    );
     stockList.set(taskId, { ...elem, cnt: elem.cnt - 1 });
   }
 }
@@ -106,4 +124,57 @@ function updateData(taskId, data) {
   // console.log(taskId);
   // console.log(data);
   publish(taskId, data);
+}
+/**
+ * Create websocket connection by index number
+ * @param {*} idx ws index
+ */
+function createWS(idx) {
+  const subscriber = new SubscriberClass(
+    approvalKeys[idx],
+    idx,
+    subscriberEmitter
+  );
+  wsList[idx] = { cnt: 0, instance: subscriber };
+}
+
+/**
+ * Create subscription
+ * @param {*} type tr_type
+ * @param {*} stockCode stock code
+ * @returns
+ */
+function subscribe(type, stockCode) {
+  const wsIdx = findAvailableWsIdx();
+  if (wsIdx === -1) {
+    // TODO : do sth
+    return;
+  }
+
+  wsList[wsIdx].instance.subscribe(type, stockCode);
+  wsList[wsIdx].cnt++;
+  return wsIdx;
+}
+
+/**
+ * Remove subscription
+ * @param {*} type tr_type
+ * @param {*} stockCode stock code
+ * @param {*} wsIdx wesocket index
+ */
+function remove(type, stockCode, wsIdx) {
+  wsList[wsIdx].instance.remove(type, stockCode);
+  wsList[wsIdx].cnt--;
+  // disconnect if 0
+}
+
+/**
+ * Find available Websocket index
+ * @returns index number, -1 if no WS available
+ */
+function findAvailableWsIdx() {
+  for (let i = 0; i < availableWsCnt; i++) {
+    if (wsList[i].cnt < 40) return i;
+  }
+  return -1;
 }

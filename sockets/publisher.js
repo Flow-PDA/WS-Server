@@ -73,7 +73,10 @@ module.exports = (server) => {
       const taskList = [];
       roomList.forEach((elem) => {
         const data = elem.split("-");
-        taskList.push({ type: data[0], code: data[1] });
+        // except default room
+        if (data.length === 2) {
+          taskList.push({ type: data[0], code: data[1] });
+        }
       });
       publisherEmitter.emit("RELEASE_SUB", taskList);
     });
@@ -86,7 +89,7 @@ module.exports = (server) => {
  * @param {*} data
  */
 module.exports.publish = (roomId, data) => {
-  console.log(`[PUB] Publish to ${roomId} : ${data}`);
+  // console.log(`[PUB] Publish to ${roomId} : ${data}`);
   socketIo.to(roomId).emit("update", data);
 };
 
