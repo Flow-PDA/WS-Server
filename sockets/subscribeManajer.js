@@ -71,7 +71,7 @@ function addStock(type, stockCode) {
       `[MAN] ${taskId} data created, ${stockList.size} subscription elem exists`
     );
   } else {
-    console.log(`[MAN] ${taskId} exists, ${elem.cnt}`);
+    console.log(`[MAN] ${taskId} exists, ${elem.cnt}, send ${elem.data}`);
     stockList.set(taskId, { ...elem, cnt: elem.cnt + 1 });
     updateData(taskId, elem.data);
   }
