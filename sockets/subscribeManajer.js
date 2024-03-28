@@ -34,10 +34,12 @@ subscriberEmitter.on("UPDATED", (type, code, payload) => {
   console.log(`[SUB]Event : UPDATED : ${taskId}`);
 
   const elem = stockList.get(taskId);
-  elem.data = payload;
+  if (elem) {
+    elem.data = payload;
 
-  Map.set(taskId, elem);
-  updateData(taskId, payload);
+    stockList.set(taskId, elem);
+    updateData(taskId, payload);
+  }
 });
 
 /**
@@ -65,9 +67,13 @@ function addStock(type, stockCode) {
     }
     stockList.set(taskId, { cnt: 1, data: initialData });
     subscribe(type, stockCode);
+    console.log(
+      `[MAN] ${taskId} data created, ${stockList.size} subscription elem exists`
+    );
   } else {
     console.log(`[MAN] ${taskId} exists, ${elem.cnt}`);
     stockList.set(taskId, { ...elem, cnt: elem.cnt + 1 });
+    updateData(taskId, elem.data);
   }
 }
 

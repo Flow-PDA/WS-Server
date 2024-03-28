@@ -10,6 +10,7 @@ const wsUrl = process.env.KIS_WS_URL;
 let ws = null;
 
 const approvalKey = process.env.KIS_WS_APPROVAL_KEY;
+let subCnt = 0;
 
 /**
  * Convert type(number) to TR_ID
@@ -40,7 +41,7 @@ module.exports = () => {
     const recvdata = filterUnicode(data).toString("utf8");
     // console.log(recvdata.toString("utf8"));
 
-    console.log(`[SUB] received : ${recvdata}`);
+    // console.log(`[SUB] received : ${recvdata}`);
     const dataArr = recvdata.split("|");
     // console.log(dataArr[3]);
     // console.log(dataArr);
@@ -82,7 +83,8 @@ module.exports = () => {
  * @param {*} code target stock code
  */
 module.exports.subscribe = (type, code) => {
-  console.log(`[SUB] start subscribing ${code}`);
+  subCnt++;
+  console.log(`[SUB] start subscribing ${code} : ${subCnt} subscribing}`);
   const temp = `{"header":{"approval_key": "${approvalKey}","custtype":"P","tr_type":"1","content-type":"utf-8"},"body":{"input":{"tr_id":"${TYPE_TO_TR_ID[type]}","tr_key":"${code}"}}}`;
   console.log(`[SUB] send messgage : ${temp}`);
   ws.send(temp);
@@ -94,7 +96,8 @@ module.exports.subscribe = (type, code) => {
  * @param {*} code target stock code
  */
 module.exports.remove = (type, code) => {
-  console.log(`[SUB] stop subscribing ${code}`);
+  subCnt--;
+  console.log(`[SUB] stop subscribing ${code} : ${subCnt} subscribing`);
   const temp = `{"header":{"approval_key": "${approvalKey}","custtype":"P","tr_type":"2","content-type":"utf-8"},"body":{"input":{"tr_id":"${TYPE_TO_TR_ID[type]}","tr_key":"${code}"}}}`;
   console.log(`[SUB] send messgage : ${temp}`);
   ws.send(temp);
