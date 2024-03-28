@@ -1,0 +1,14 @@
+services:
+  express:
+    container_name: flow-stock-socket
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    networks:
+      - flow-net
+
+networks:
+  flow-net:
+    name: flow-net
