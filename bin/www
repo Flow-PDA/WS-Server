@@ -22,7 +22,7 @@ app.set("port", port);
 var server = http.createServer(app);
 
 const io = require("../sockets/publisher")(server);
-const ws = require("../sockets/subscriber")();
+// const ws = require("../sockets/subscriber")();
 const manager = require("../sockets/subscribeManajer");
 /**
  * Listen on provided port, on all network interfaces.
