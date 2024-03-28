@@ -26,7 +26,7 @@ async function getPrice(stockCode) {
       0,
     ];
   } catch (error) {
-    console.log(`[API] ${error}`);
+    console.log(`[API] ${error.response?.data?.msg1}`);
     // console.log(error);
   }
 }
