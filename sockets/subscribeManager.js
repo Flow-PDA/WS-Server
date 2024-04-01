@@ -72,7 +72,7 @@ function addStock(type, stockCode) {
 
     let initialData = [];
     const wsIdx = subscribe(type, stockCode);
-    if ((!Number.isInteger(wsIdx)) || wsIdx < 0 || wsIdx < availableWsCnt) return;
+    if ((!Number.isInteger(wsIdx)) || wsIdx < 0 || wsIdx >= availableWsCnt) return;
     if (type == 1) {
       getPrice(stockCode).then((data) => {
         // console.log(data);
@@ -174,8 +174,8 @@ function subscribe(type, stockCode) {
  */
 function remove(type, stockCode, wsIdx) {
   console.log(`remove ${type} - ${stockCode} at ${wsIdx}`)
-  wsList[wsIdx]?.instance.remove(type, stockCode);
-  wsList[wsIdx]?.cnt--;
+  wsList[wsIdx].instance.remove(type, stockCode);
+  wsList[wsIdx].cnt--;
   // disconnect if 0
 }
 
@@ -186,6 +186,9 @@ function remove(type, stockCode, wsIdx) {
 function findAvailableWsIdx() {
   for (let i = 0; i < availableWsCnt; i++) {
     if (wsList[i].cnt < 40) return i;
+    else {
+      console.log(`[MAN] WS ${i} subscribing ${wsList[i].cnt}s`);
+    }
   }
   return -1;
 }
