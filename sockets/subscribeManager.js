@@ -11,7 +11,7 @@ const availableWsCnt = approvalKeys.length;
 const stockList = new Map();
 const wsList = new Array(availableWsCnt);
 
-class SubscriberEmitter extends EventEmitter {}
+class SubscriberEmitter extends EventEmitter { }
 const subscriberEmitter = new SubscriberEmitter();
 
 // Receive list of tasks
@@ -67,27 +67,30 @@ function addStock(type, stockCode) {
     `[MAN] sub event from client : ${type}-${stockCode} : ${elem} exists`
   );
   // console.log(elem);
-  if (!elem || elem.cnt == 0) {
+  if (!elem || elem.cnt == 0 || elem.data) {
     console.log(`[MAN] ${taskId} not exists, CREATE NEW`);
 
     let initialData = [];
+    const wsIdx = subscribe(type, stockCode);
     if (type == 1) {
       getPrice(stockCode).then((data) => {
         // console.log(data);
-        initialData = data;
+        stockList.set(taskId, { cnt: 1, data: initialData, wsIdx: wsIdx });
+        console.log(
+          `[MAN] ${taskId} data created at ws ${wsIdx}, ${stockList.size} subscription elem exists`
+        );
         updateData(taskId, data);
       });
     } else if (type == 2) {
       getCallBids(stockCode).then((data) => {
-        console.log(data);
+        // console.log(data);
+        stockList.set(taskId, { cnt: 1, data: initialData, wsIdx: wsIdx });
+        console.log(
+          `[MAN] ${taskId} data created at ws ${wsIdx}, ${stockList.size} subscription elem exists`
+        );
         updateData(taskId, data);
       });
     }
-    const wsIdx = subscribe(type, stockCode);
-    stockList.set(taskId, { cnt: 1, data: initialData, wsIdx: wsIdx });
-    console.log(
-      `[MAN] ${taskId} data created at ws ${wsIdx}, ${stockList.size} subscription elem exists`
-    );
   } else {
     console.log(`[MAN] ${taskId} exists, ${elem.cnt}, send ${elem.data}`);
     stockList.set(taskId, { ...elem, cnt: elem.cnt + 1 });
