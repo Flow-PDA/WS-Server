@@ -2,7 +2,7 @@
 const { publish, publisherEmitter } = require("./publisher");
 const EventEmitter = require("events");
 const SubscriberClass = require("./SubscriberClass");
-const { getPrice } = require("../apis/kisApi");
+const { getPrice, getCallBids } = require("../apis/kisApi");
 
 console.log("init manager");
 const APPROVAL_KEYS = process.env.KIS_WS_APPROVAL_KEYS;
@@ -75,6 +75,11 @@ function addStock(type, stockCode) {
       getPrice(stockCode).then((data) => {
         // console.log(data);
         initialData = data;
+        updateData(taskId, data);
+      });
+    } else if (type == 2) {
+      getCallBids(stockCode).then((data) => {
+        console.log(data);
         updateData(taskId, data);
       });
     }
