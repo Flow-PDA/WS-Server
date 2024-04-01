@@ -21,7 +21,7 @@ async function getPrice(stockCode) {
     const output = resp.data.output;
     // console.log(resp);
     console.log(
-      `[API] ${stockCode} : current : ${response.data.output["stck_prpr"]}`
+      `[API] ${stockCode} : current : ${resp.data.output["stck_prpr"]}`
     );
 
     return [
@@ -67,7 +67,7 @@ async function getCallBids(stockCode) {
       sellList,
       buyList,
     };
-  } catch (error) {}
+  } catch (error) { }
 }
 
 module.exports = { getPrice, getCallBids };
