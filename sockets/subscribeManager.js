@@ -72,6 +72,7 @@ function addStock(type, stockCode) {
 
     let initialData = [];
     const wsIdx = subscribe(type, stockCode);
+    if ((!Number.isInteger(wsIdx)) || wsIdx < 0 || wsIdx < availableWsCnt) return;
     if (type == 1) {
       getPrice(stockCode).then((data) => {
         // console.log(data);
@@ -155,6 +156,7 @@ function createWS(idx) {
 function subscribe(type, stockCode) {
   const wsIdx = findAvailableWsIdx();
   if (wsIdx === -1) {
+    console.log(`No more available rooms to subscribe`)
     // TODO : do sth
     return;
   }
@@ -171,8 +173,9 @@ function subscribe(type, stockCode) {
  * @param {*} wsIdx wesocket index
  */
 function remove(type, stockCode, wsIdx) {
-  wsList[wsIdx].instance.remove(type, stockCode);
-  wsList[wsIdx].cnt--;
+  console.log(`remove ${type} - ${stockCode} at ${wsIdx}`)
+  wsList[wsIdx]?.instance.remove(type, stockCode);
+  wsList[wsIdx]?.cnt--;
   // disconnect if 0
 }
 
