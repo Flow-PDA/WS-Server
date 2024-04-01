@@ -7,7 +7,7 @@ const APP_SECRET = process.env.KIS_API_APP_SECRET;
 
 const CRON_PER_12H = "0 */12 * * *";
 const CRON_PER_2M = "*/2 * * * *";
-const CRON_SCHEDULE = "00 08 * * *";
+const CRON_SCHEDULE = "00 23 * * *";
 
 /**
  * shceduled job : refresh tokens of Party per 12H
